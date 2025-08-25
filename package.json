@@ -1,7 +1,7 @@
 {
-  "name": "snaptik",
+  "name": "tiktok-api-vercel",
   "version": "1.0.0",
-  "description": "",
+  "description": "TikTok Downloader on Vercel",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -10,7 +10,6 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@tobyg74/tiktok-api-dl": "^1.3.4",
-    "node-fetch": "^3.3.2"
+
   }
 }
