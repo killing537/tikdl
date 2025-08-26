@@ -1,13 +1,9 @@
 // File: api/download.js
 
-const tiktokModule = require('@tobyg74/tiktok-api-dl');
+const { Downloader } = require('@tobyg74/tiktok-api-dl');
 const fetch = require('node-fetch');
 
 module.exports = async (req, res) => {
-  // BARIS PENTING UNTUK DEBUGGING
-  // Ini akan mencetak struktur asli dari library ke Log Vercel
-  console.log('Struktur library yang diimpor:', tiktokModule);
-
   const tiktokUrl = req.query.url;
   const format = req.query.format;
 
@@ -16,33 +12,34 @@ module.exports = async (req, res) => {
   }
 
   try {
-    // Mencoba mengakses fungsi melalui properti .default
-    const tikd = tiktokModule.default?.tikd || tiktokModule.tikd || tiktokModule;
-    const tikdJ = tiktokModule.default?.tikdJ || tiktokModule.tikdJ;
+    // Panggil fungsi Downloader sesuai struktur library
+    const result = await Downloader(tiktokUrl, { version: 'v1' });
 
-    if (typeof tikd !== 'function' || typeof tikdJ !== 'function') {
-        throw new Error('Fungsi inti dari library downloader tidak dapat ditemukan.');
+    if (result.status !== 'success') {
+      throw new Error(result.message || 'Gagal memproses URL TikTok.');
     }
-
+    
     if (format === 'mp3') {
-      const jsonResult = await tikdJ(tiktokUrl, { version: 'v1' });
-      if (jsonResult.status !== 'success' || !jsonResult.result.music?.playUrl) {
-        throw new Error('Gagal mendapatkan data musik atau musik tidak tersedia.');
+      if (!result.result.music?.playUrl) {
+        throw new Error('Musik tidak ditemukan untuk URL ini.');
       }
-      const musicUrl = jsonResult.result.music.playUrl;
+      const musicUrl = result.result.music.playUrl;
       const response = await fetch(musicUrl);
       const buffer = await response.buffer();
       res.setHeader('Content-Type', 'audio/mpeg');
       res.setHeader('Content-Disposition', 'attachment; filename="tiktok_audio.mp3"');
       res.send(buffer);
     } else {
-      const result = await tikd(tiktokUrl, { version: 'v1' });
-      if (result.status !== 'success' || !result.video) {
-        throw new Error(result.message || 'Gagal memproses video TikTok.');
+      if (!result.result.video?.nowm) {
+        throw new Error('Video tanpa watermark tidak ditemukan.');
       }
+      // Ambil URL video tanpa watermark dari hasil
+      const videoUrl = result.result.video.nowm;
+      const response = await fetch(videoUrl);
+      const buffer = await response.buffer();
       res.setHeader('Content-Type', 'video/mp4');
       res.setHeader('Content-Disposition', 'attachment; filename="tiktok_video.mp4"');
-      res.send(result.video);
+      res.send(buffer);
     }
   } catch (error) {
     console.error("====== KESALAHAN PENUH DI SERVER ======");
