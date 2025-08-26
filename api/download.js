@@ -3,7 +3,6 @@
 const { Downloader } = require('@tobyg74/tiktok-api-dl');
 const fetch = require('node-fetch');
 
-// Menambahkan Headers agar request mirip browser
 const fetchWithHeaders = (url) => {
   return fetch(url, {
     headers: {
@@ -33,18 +32,21 @@ module.exports = async (req, res) => {
         throw new Error('Musik tidak ditemukan untuk URL ini.');
       }
       const musicUrl = result.result.music.playUrl;
-      // Gunakan fetch dengan headers
       const response = await fetchWithHeaders(musicUrl);
       const buffer = await response.buffer();
       res.setHeader('Content-Type', 'audio/mpeg');
       res.setHeader('Content-Disposition', 'attachment; filename="tiktok_audio.mp3"');
       res.send(buffer);
     } else {
-      if (!result.result.video?.nowm) {
-        throw new Error('Video tanpa watermark tidak ditemukan.');
+      // === PERUBAHAN LOGIKA DI SINI ===
+      // Coba cari URL video tanpa watermark (nowm), jika tidak ada, pakai yang ada watermark (wm)
+      const videoUrl = result.result.video?.nowm || result.result.video?.wm;
+
+      if (!videoUrl) {
+        // Jika keduanya tidak ada, baru tampilkan error
+        throw new Error('Video tanpa watermark atau dengan watermark tidak ditemukan.');
       }
-      const videoUrl = result.result.video.nowm;
-      // Gunakan fetch dengan headers
+
       const response = await fetchWithHeaders(videoUrl);
       const buffer = await response.buffer();
       res.setHeader('Content-Type', 'video/mp4');
