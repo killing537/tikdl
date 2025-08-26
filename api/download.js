@@ -1,9 +1,13 @@
 // File: api/download.js
 
-const tiktok = require('@tobyg74/tiktok-api-dl'); // <-- Muat seluruh library ke objek 'tiktok'
-const fetch = require('node-fetch');
+const tiktokModule = require('@tobyg74/tiktok-api-dl');
+const fetch = require('node-fetch@2');
 
 module.exports = async (req, res) => {
+  // BARIS PENTING UNTUK DEBUGGING
+  // Ini akan mencetak struktur asli dari library ke Log Vercel
+  console.log('Struktur library yang diimpor:', tiktokModule);
+
   const tiktokUrl = req.query.url;
   const format = req.query.format;
 
@@ -12,9 +16,16 @@ module.exports = async (req, res) => {
   }
 
   try {
+    // Mencoba mengakses fungsi melalui properti .default
+    const tikd = tiktokModule.default?.tikd || tiktokModule.tikd || tiktokModule;
+    const tikdJ = tiktokModule.default?.tikdJ || tiktokModule.tikdJ;
+
+    if (typeof tikd !== 'function' || typeof tikdJ !== 'function') {
+        throw new Error('Fungsi inti dari library downloader tidak dapat ditemukan.');
+    }
+
     if (format === 'mp3') {
-      // Panggil fungsi melalui objek 'tiktok'
-      const jsonResult = await tiktok.tikdJ(tiktokUrl, { version: 'v1' }); 
+      const jsonResult = await tikdJ(tiktokUrl, { version: 'v1' });
       if (jsonResult.status !== 'success' || !jsonResult.result.music?.playUrl) {
         throw new Error('Gagal mendapatkan data musik atau musik tidak tersedia.');
       }
@@ -25,8 +36,7 @@ module.exports = async (req, res) => {
       res.setHeader('Content-Disposition', 'attachment; filename="tiktok_audio.mp3"');
       res.send(buffer);
     } else {
-      // Panggil fungsi melalui objek 'tiktok'
-      const result = await tiktok.tikd(tiktokUrl, { version: 'v1' }); 
+      const result = await tikd(tiktokUrl, { version: 'v1' });
       if (result.status !== 'success' || !result.video) {
         throw new Error(result.message || 'Gagal memproses video TikTok.');
       }
