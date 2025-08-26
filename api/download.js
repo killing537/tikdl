@@ -1,9 +1,10 @@
 // File: api/download.js
 
-import { tikd, tikdJ } from '@tobyg74/tiktok-api-dl';
-import fetch from 'node-fetch';
+const { tikd, tikdJ } = require('@tobyg74/tiktok-api-dl');
+const fetch = require('node-fetch'); // <-- PERUBAHAN DI SINI
 
-export default async function handler(req, res) {
+// Fungsi handler tetap sama, tidak perlu export default
+module.exports = async (req, res) => {
   const tiktokUrl = req.query.url;
   const format = req.query.format;
 
@@ -19,10 +20,10 @@ export default async function handler(req, res) {
       }
       const musicUrl = jsonResult.result.music.playUrl;
       const response = await fetch(musicUrl);
-      const buffer = await response.arrayBuffer();
+      const buffer = await response.buffer(); // <-- PERUBAHAN KECIL: .buffer() untuk v2
       res.setHeader('Content-Type', 'audio/mpeg');
       res.setHeader('Content-Disposition', 'attachment; filename="tiktok_audio.mp3"');
-      res.send(Buffer.from(buffer));
+      res.send(buffer);
     } else {
       const result = await tikd(tiktokUrl, { version: 'v1' });
       if (result.status !== 'success' || !result.video) {
@@ -33,11 +34,9 @@ export default async function handler(req, res) {
       res.send(result.video);
     }
   } catch (error) {
-    // ==== BAGIAN PENTING UNTUK DEBUGGING ====
     console.error("====== KESALAHAN PENUH DI SERVER ======");
-    console.error(error); // Ini akan mencetak detail error lengkap di Log Vercel
+    console.error(error);
     console.error("======================================");
-    
     res.status(500).json({ error: 'Terjadi kesalahan internal di server.', message: error.message });
   }
-}
+};
