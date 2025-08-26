@@ -1,7 +1,7 @@
 // File: api/download.js
 
 const tiktokModule = require('@tobyg74/tiktok-api-dl');
-const fetch = require('node-fetch@2');
+const fetch = require('node-fetch');
 
 module.exports = async (req, res) => {
   // BARIS PENTING UNTUK DEBUGGING
